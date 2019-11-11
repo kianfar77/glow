@@ -111,7 +111,6 @@ lazy val dependencies = Seq(
     .exclude("com.github.fommil.netlib", "*"),
   // Test dependencies
   "org.scalatest" %% "scalatest" % "3.0.3" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
   "org.mockito" % "mockito-all" % "1.9.5" % "test",
   "org.apache.spark" %% "spark-core" % sparkVersion % "test" classifier "tests",
   "org.apache.spark" %% "spark-catalyst" % sparkVersion % "test" classifier "tests",
@@ -207,27 +206,7 @@ ThisBuild / publishMavenStyle := true
 ThisBuild / bintrayOrganization := Some("projectglow")
 ThisBuild / bintrayRepository := "glow"
 
-import sbtrelease.Versions
-import ReleaseKeys.versions
 import ReleaseTransformations._
-
-// Write stable version
-lazy val stableVersionFile = settingKey[File]("Stable release version file")
-lazy val writeStableReleaseVersion = writeStableVersion(_._1)
-
-def writeStableVersion(selectVersion: Versions => String): ReleaseStep = { st: State =>
-  val vs = st
-    .get(versions)
-    .getOrElse(
-      sys.error("No versions are set! Was this release part executed before inquireVersions?"))
-  val selected = selectVersion(vs)
-
-  st.log.info("Writing stable version '%s'." format selected)
-  IO.writeLines(Project.extract(st).get(stableVersionFile), Seq(selected))
-  st
-}
-
-stableVersionFile := baseDirectory.value / "stable-version.txt"
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
@@ -235,8 +214,9 @@ releaseProcess := Seq[ReleaseStep](
   runClean,
   runTest,
   setReleaseVersion,
-  writeStableReleaseVersion,
+  updateStableVersion,
   commitReleaseVersion,
+  commitStableVersion,
   tagRelease,
   publishArtifacts,
   setNextVersion,
