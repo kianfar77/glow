@@ -16,6 +16,8 @@
 
 package io.projectglow.common.logging
 
+import scala.collection.JavaConverters._
+
 trait HlsEventRecorder extends HlsUsageLogging {
 
   // Wrapper to simplify recording an HLS usage event
@@ -32,7 +34,8 @@ trait HlsEventRecorder extends HlsUsageLogging {
 
 }
 
-object PythonHlsEventRecorder extends HlsEventRecorder {
-  override def recordHlsEvent(tag: String, options: Map[String, Any]): Unit =
-    super.recordHlsEvent(tag, options)
+object PythonEventRecorder extends HlsEventRecorder {
+  def recordHlsEvent(tag: String, options: java.util.Map[String, Any]): Unit = {
+    super.recordHlsEvent(tag, options.asScala.toMap)
+  }
 }
