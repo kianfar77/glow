@@ -31,3 +31,8 @@ trait HlsEventRecorder extends HlsUsageLogging {
   }
 
 }
+
+object PythonHlsEventRecorder extends HlsEventRecorder {
+  override def recordHlsEvent(tag: String, options: Map[String, Any]): Unit =
+    super.recordHlsEvent(tag, options)
+}
