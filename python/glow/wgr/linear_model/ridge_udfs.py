@@ -111,6 +111,10 @@ def map_normal_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeld
              |-- xty: array
              |    |-- element: double
     """
+    # if pdf['header'][0] == '1:0:C:A' and pdf['sample_block'][0] == '1':
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
+
     header_block, sample_block, label = parse_header_block_sample_block_label(key, key_pattern)
     sort_in_place(pdf, ['sort_key', 'header'])
     n_rows = pdf['size'][0]
@@ -316,6 +320,10 @@ def apply_model(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf: 
 
     header_block, sample_block, label = parse_header_block_sample_block_label(key, key_pattern)
     sort_in_place(pdf, ['sort_key'])
+
+    # if key == ('chr_1_block_0', '2'):
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
 
     if covdf.empty:
         n_rows = pdf['size'][0]

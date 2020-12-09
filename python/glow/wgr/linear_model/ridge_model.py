@@ -43,6 +43,7 @@ class RidgeReducer:
         Args:
             alphas : array_like of alpha values used in the ridge reduction (optional).
         """
+
         if not (alphas >= 0).all():
             raise Exception('Alpha values must all be non-negative.')
         self.alphas = create_alpha_dict(alphas)
@@ -67,7 +68,8 @@ class RidgeReducer:
         Returns:
             Spark DataFrame containing the model resulting from the fitting routine.
         """
-
+        # from pdb_clone import pdb
+        # pdb.set_trace_remote()
         validate_inputs(labeldf, covdf)
         map_key_pattern = ['header_block', 'sample_block']
         reduce_key_pattern = ['header_block', 'header']
@@ -130,6 +132,7 @@ class RidgeReducer:
         else:
             joined = blockdf.drop('sort_key') \
                 .join(modeldf, ['header_block', 'sample_block', 'header'], 'right')
+
 
         transform_udf = pandas_udf(
             lambda key, pdf: apply_model(key, transform_key_pattern, pdf, labeldf, sample_blocks,

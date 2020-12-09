@@ -129,7 +129,7 @@ def assemble_block(n_rows: Int, n_cols: Int, pdf: pd.DataFrame, cov_matrix: NDAr
     sig = pdf['sig'].to_numpy()
 
     if 0 in sig:
-        raise ValueError(f'Standard deviation cannot be 0.')
+       raise ValueError(f'Standard deviation cannot be 0.')
 
     if row_mask.size == 0:
         row_mask = np.full(n_rows, True)
