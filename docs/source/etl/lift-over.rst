@@ -43,7 +43,7 @@ you can use to download the required file for liftOver from the b37 to the hg38 
 Coordinate liftOver
 ====================
 
-To perform liftOver for genomic coordinates, use the function ``lift_over_coordinates``. ``lift_over_coordinates``, which has
+To perform liftOver for genomic coordinates, use the function ``lift_over_coordinates``. ``lift_over_coordinates`` has
 the following parameters.
 
 - chromosome: ``string``
@@ -122,7 +122,7 @@ If liftOver fails, the output row contains the original input row, the additiona
 .. invisible-code-block: python
 
    lifted_variant = output_df.select('contigName', 'start', 'end', 'INFO_SwappedAlleles', 'INFO_ReverseComplementedAlleles', 'liftOverStatus').head()
-   expected_variant = Row(contigName='chr20', start=18190714, end=18190715, INFO_SwappedAlleles=None, INFO_ReverseComplementedAlleles=None, liftOverStatus=Row(errorMessage=None, success=True))
+   expected_variant = Row(contigName='chr20', start=18190714, end=18190715, INFO_SwappedAlleles=False, INFO_ReverseComplementedAlleles=False, liftOverStatus=Row(errorMessage=None, success=True))
    assert_rows_equal(lifted_variant, expected_variant)
 
 .. notebook:: .. etl/lift-over.html
