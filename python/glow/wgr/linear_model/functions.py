@@ -211,6 +211,10 @@ def get_irls_pieces(X: NDArray[Float], y: NDArray[Float], alpha_value: Float,
         XtY : m length array representing transpose(X)*(y - p)
 
     """
+    # Kiavash:
+    from pdb_clone import pdb
+    pdb.set_trace_remote()
+
     n_cov = beta_cov.size
     #If we have no observations in this block (i.e, y.sum() == 0), then we should not try to fit a model and instead
     #just return a parameterless model based on the population frequency of observations p0
@@ -248,6 +252,9 @@ def slice_label_rows(labeldf: pd.DataFrame, label: str, sample_list: List[str],
     Returns:
         Matrix of [number of samples in sample_block - number of samples masked] x [number of labels to slice]
     """
+    # Kiavash:
+    if labeldf.empty:
+        return np.array([])
     if row_mask.size == 0:
         row_mask = np.full(len(sample_list), True)
     if label == 'all':

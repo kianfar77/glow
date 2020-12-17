@@ -97,11 +97,18 @@ def map_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf:
     """
     header_block, sample_block, label, alpha_name = parse_header_block_sample_block_label_alpha_name(
         key, key_pattern)
+
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
+
     sort_in_place(pdf, ['sort_key', 'header'])
     n_rows = pdf['size'][0]
     n_cols = len(pdf)
     sample_list = sample_blocks[sample_block]
-    beta_cov = beta_cov_dict[label]
+    # Kiavash: To shut down intercept
+    # beta_cov = beta_cov_dict[label]
+    beta_cov = np.array([], Float)
 
     if maskdf.empty:
         row_mask = np.array([])

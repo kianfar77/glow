@@ -88,6 +88,10 @@ class LogisticRegression:
                               columns=labeldf.columns,
                               index=labeldf.index)
 
+        # if pdf['header'][0] == '1:0:C:A' and pdf['sample_block'][0] == '1':
+        # from pdb_clone import pdb
+        # pdb.set_trace_remote()
+
         beta_cov_dict = {}
         for label in labeldf:
             row_mask = slice_label_rows(maskdf, label, list(labeldf.index), np.array([])).ravel()
@@ -99,9 +103,9 @@ class LogisticRegression:
                                                   guess=np.array([]),
                                                   n_cov=0)
             beta_cov_dict[label] = fit_result.x
-
+        #Kiavash: changed covdf to pd.DataFram{} in the following udfs to deactivate the intercept for comparison with regenie
         map_udf = pandas_udf(
-            lambda key, pdf: map_irls_eqn(key, map_key_pattern, pdf, labeldf, sample_blocks, covdf,
+            lambda key, pdf: map_irls_eqn(key, map_key_pattern, pdf, labeldf, sample_blocks, pd.DataFrame({}),
                                           beta_cov_dict, maskdf, self.alphas), irls_eqn_struct,
             PandasUDFType.GROUPED_MAP)
 
@@ -109,12 +113,12 @@ class LogisticRegression:
                                 irls_eqn_struct, PandasUDFType.GROUPED_MAP)
 
         model_udf = pandas_udf(
-            lambda key, pdf: solve_irls_eqn(key, model_key_pattern, pdf, labeldf, self.alphas, covdf
+            lambda key, pdf: solve_irls_eqn(key, model_key_pattern, pdf, labeldf, self.alphas, pd.DataFrame({})
                                             ), model_struct, PandasUDFType.GROUPED_MAP)
 
         score_udf = pandas_udf(
             lambda key, pdf: score_models(key, score_key_pattern, pdf, labeldf, sample_blocks, self.
-                                          alphas, covdf, maskdf, metric), cv_struct,
+                                          alphas, pd.DataFrame({}), maskdf, metric), cv_struct,
             PandasUDFType.GROUPED_MAP)
 
         modeldf = blockdf.drop('alpha') \

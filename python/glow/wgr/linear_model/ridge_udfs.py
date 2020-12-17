@@ -246,6 +246,8 @@ def solve_normal_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labe
     header_block, sample_block, label = parse_header_block_sample_block_label(key, key_pattern)
     sort_in_place(pdf, ['sort_key', 'header'])
     alpha_names, alpha_values = zip(*sorted(alphas.items()))
+    # Kiavash
+    # print(alpha_values)
     if covdf.empty:
         beta_stack = evaluate_coefficients(pdf, alpha_values, 0)
     else:
