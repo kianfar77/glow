@@ -98,9 +98,10 @@ def map_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf:
     header_block, sample_block, label, alpha_name = parse_header_block_sample_block_label_alpha_name(
         key, key_pattern)
 
-    # if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
-    #     from pdb_clone import pdb
-    #     pdb.set_trace_remote()
+    # Kiavash:
+    if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
+        from pdb_clone import pdb
+        pdb.set_trace_remote()
 
     sort_in_place(pdf, ['sort_key', 'header'])
     n_rows = pdf['size'][0]
@@ -121,7 +122,10 @@ def map_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf:
     header_col = np.concatenate([covdf.columns, pdf['header']])
     #Add new sort_keys for covariates, starting from -n_cov up to 0 to ensure they come ahead of the headers.
     sort_key_col = np.concatenate((np.arange(-n_cov, 0), pdf['sort_key']))
-    X = assemble_block(n_rows, n_cols, pdf, cov_matrix, row_mask)
+
+    # Kiavash: Replaced to avoid standardization
+    # X = assemble_block(n_rows, n_cols, pdf, cov_matrix, row_mask)
+    X = assemble_block_no_standardization(n_rows, n_cols, pdf, cov_matrix, row_mask)
 
     Y = slice_label_rows(labeldf, label, sample_list, row_mask)
 
@@ -246,6 +250,12 @@ def solve_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeld
     """
     header_block, sample_block, label, alpha_name = parse_header_block_sample_block_label_alpha_name(
         key, key_pattern)
+
+    # Kiavash
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
+
     sort_in_place(pdf, ['sort_key', 'header'])
     alpha_value = alphas[alpha_name]
     n_cov = len(covdf.columns)

@@ -148,6 +148,50 @@ def assemble_block(n_rows: Int, n_cols: Int, pdf: pd.DataFrame, cov_matrix: NDAr
     else:
         return X[row_mask, :]
 
+# Kiavash: added this function to drop standardization for comparison with regenie. See the comments in Step1_Model.cpp  about l1->test_mat
+#@typechecked
+def assemble_block_no_standardization(n_rows: Int, n_cols: Int, pdf: pd.DataFrame, cov_matrix: NDArray[(Any, Any),
+                                                                                    Float],
+                   row_mask: NDArray[Any]) -> NDArray[Float]:
+    """
+    Creates a dense n_rows by n_cols matrix from the array of either sparse or dense vectors in the Pandas DataFrame
+    corresponding to a group.  This matrix represents a block.
+
+    Args:
+         n_rows : The number of rows in the resulting matrix
+         n_cols : The number of columns in the resulting matrix
+         pdf : Pandas DataFrame corresponding to a group
+         cov_matrix: 2D numpy array representing covariate columns that should be prepended to matrix X from the block.  Can be
+            empty if covariates are not being applied.
+        row_mask:  1D numpy array of size n_rows containing booleans used to mask rows from the block X before
+            return.
+
+    Returns:
+        Dense n_rows - n_masked by n_columns matrix where the columns have been 0-centered and standard scaled.
+    """
+    mu = pdf['mu'].to_numpy()
+    sig = pdf['sig'].to_numpy()
+
+    if 0 in sig:
+        raise ValueError(f'Standard deviation cannot be 0.')
+
+    if row_mask.size == 0:
+        row_mask = np.full(n_rows, True)
+
+    if 'indices' not in pdf.columns:
+        X_raw = np.column_stack(pdf['values'].array)
+    else:
+        X_raw = np.zeros([n_rows, n_cols])
+        for column, row in enumerate(pdf[['indices', 'values']].itertuples()):
+            X_raw[row.indices, column] = row.values
+
+    # X = ((X_raw - mu) / sig)
+    X = X_raw
+
+    if cov_matrix.any():
+        return np.column_stack((cov_matrix, X))[row_mask, :]
+    else:
+        return X[row_mask, :]
 
 @typechecked
 def constrained_logistic_fit(X: NDArray[Float], y: NDArray[Float], alpha_arr: NDArray[Float],
@@ -212,8 +256,8 @@ def get_irls_pieces(X: NDArray[Float], y: NDArray[Float], alpha_value: Float,
 
     """
     # Kiavash:
-    from pdb_clone import pdb
-    pdb.set_trace_remote()
+    # from pdb_clone import pdb
+    # pdb.set_trace_remote()
 
     n_cov = beta_cov.size
     #If we have no observations in this block (i.e, y.sum() == 0), then we should not try to fit a model and instead
