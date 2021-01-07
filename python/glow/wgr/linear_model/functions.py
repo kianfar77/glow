@@ -471,7 +471,9 @@ def log_loss(p: NDArray[Float], y: NDArray[Float]) -> NDArray[Float]:
     Returns:
         Array of [n * m]
     """
-    eps = 1E-15
+    # Kiavash:
+    eps = 0
+    # eps = 1E-15
     return -(y * np.log(p + eps) + (1 - y) * np.log(1 - p + eps)).sum(axis=0) / y.shape[0]
 
 

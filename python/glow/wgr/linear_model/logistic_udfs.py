@@ -99,9 +99,9 @@ def map_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf:
         key, key_pattern)
 
     # Kiavash:
-    if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
-        from pdb_clone import pdb
-        pdb.set_trace_remote()
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
 
     sort_in_place(pdf, ['sort_key', 'header'])
     n_rows = pdf['size'][0]
@@ -252,7 +252,7 @@ def solve_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeld
         key, key_pattern)
 
     # Kiavash
-    # if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_4':
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1' and alpha_name == 'alpha_0':
     #     from pdb_clone import pdb
     #     pdb.set_trace_remote()
 
@@ -278,7 +278,7 @@ def solve_irls_eqn(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeld
 @typechecked
 def apply_logistic_model(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame,
                          labeldf: pd.DataFrame, sample_blocks: Dict[str, List[str]],
-                         alphas: Dict[str, Float], covdf: pd.DataFrame) -> pd.DataFrame:
+                         alphas: Dict[stri, Float], covdf: pd.DataFrame) -> pd.DataFrame:
     """
     This function takes a block X and a coefficient matrix B, performs the multiplication X*B, and returns sigmoid(X*B),
     representing the output of the logistic model p(y|X) = sigmoid(XB).
@@ -323,6 +323,12 @@ def apply_logistic_model(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame,
                  |-- label: string
     """
     header_block, sample_block, label = parse_header_block_sample_block_label(key, key_pattern)
+
+    # Kiavash
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1':
+    # from pdb_clone import pdb
+    # pdb.set_trace_remote()
+
     sort_in_place(pdf, ['sort_key'])
     # If there is a covdf, we will have null 'values' entries in pdf arising from the right join of blockdf
     # to modeldf, so we will filter those rows out before assembling the block.

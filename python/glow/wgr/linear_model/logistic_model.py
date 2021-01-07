@@ -117,7 +117,7 @@ class LogisticRegression:
                                             ), model_struct, PandasUDFType.GROUPED_MAP)
 
         score_udf = pandas_udf(
-            lambda key, pdf: score_models(key, score_key_pattern, pdf, labeldf, sample_blocks, self.
+            lambda key, pdf: score_models_no_standardization(key, score_key_pattern, pdf, labeldf, sample_blocks, self.
                                           alphas, pd.DataFrame({}), maskdf, metric), cv_struct,
             PandasUDFType.GROUPED_MAP)
 
@@ -172,7 +172,7 @@ class LogisticRegression:
                 warnings.warn('Ignoring covariates for linear response')
                 covdf = pd.DataFrame({})
             transform_udf = pandas_udf(
-                lambda key, pdf: apply_model(key, transform_key_pattern, pdf, labeldf,
+                lambda key, pdf: apply_model_no_standardization(key, transform_key_pattern, pdf, labeldf,
                                              sample_blocks, self.alphas, covdf),
                 reduced_matrix_struct, PandasUDFType.GROUPED_MAP)
             join_type = 'inner'
@@ -185,7 +185,7 @@ class LogisticRegression:
                 covdf = covdf.copy()
                 covdf.insert(0, 'intercept', 1)
             transform_udf = pandas_udf(
-                lambda key, pdf: apply_logistic_model(key, transform_key_pattern, pdf, labeldf,
+                lambda key, pdf: apply_logstic_model(key, transform_key_pattern, pdf, labeldf,
                                                       sample_blocks, self.alphas, covdf),
                 logistic_reduced_matrix_struct, PandasUDFType.GROUPED_MAP)
             join_type = 'right'

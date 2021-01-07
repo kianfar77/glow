@@ -327,6 +327,11 @@ def apply_model(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf: 
     #     from pdb_clone import pdb
     #     pdb.set_trace_remote()
 
+    # Kiavash
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1':
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
+
     if covdf.empty:
         n_rows = pdf['size'][0]
         n_cols = len(pdf)
@@ -429,6 +434,191 @@ def score_models(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf:
         n_cols = len(pdf[~pdf['values'].isnull()])
         cov_matrix = slice_label_rows(covdf, 'all', sample_list, np.array([]))
         X = assemble_block(n_rows, n_cols, pdf[~pdf['values'].isnull()], cov_matrix, row_mask)
+
+    B = np.row_stack(pdf['coefficients'].array)
+    XB = X @ B
+    Y = slice_label_rows(labeldf, label, sample_list, row_mask)
+    if metric == 'r2':
+        scores = r_squared(XB, Y)
+    elif metric == 'log_loss':
+        Z = sigmoid(XB)
+        scores = log_loss(Z, Y)
+    else:
+        raise ValueError(f'Metric should be either "r2" or "log_loss", found {metric}')
+    alpha_names = sorted(alphas.keys())
+
+    data = {'sample_block': sample_block, 'label': label, 'alpha': alpha_names, 'score': scores}
+
+    return pd.DataFrame(data)
+
+
+# Kiavash: added this function to drop standardization for comparison with regenie. See the comments in Step1_Model.cpp  about l1->test_mat
+@typechecked
+def apply_model_no_standardization(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf: pd.DataFrame,
+                sample_index: Dict[str, List[str]], alphas: Dict[str, Float],
+                covdf: pd.DataFrame) -> pd.DataFrame:
+    """
+    This function takes a block X and a coefficient matrix B and performs the multiplication X*B.  The matrix resulting
+    from this multiplication represents a block in a new, dimensionally-reduced block matrix.
+
+    Args:
+        key : unique key identifying the group of rows emitted by a groupBy statement
+        key_pattern : pattern of columns used in the groupBy statement that emitted this group of rows
+        pdf : starting Pandas DataFrame containing the lists of rows used to assemble block X and coefficients B
+            identified by :key:
+            schema:
+                 |-- header_block: string
+                 |-- sample_block: string
+                 |-- header: string
+                 |-- size: integer
+                 |-- indices: array
+                 |    |-- element: integer
+                 |-- values: array
+                 |    |-- element: double
+                 |-- sort_key: integer
+                 |-- mu: double
+                 |-- sig: double
+                 |-- alphas: array
+                 |    |-- element: string
+                 |-- labels: array
+                 |    |-- element: string
+                 |-- coefficients: array
+                 |    |-- element: double
+        labeldf : Pandas DataFrame containing label values that were used in fitting coefficient matrix B.
+        sample_index : sample_index: dict containing a mapping of sample_block ID to a list of corresponding sample IDs
+        alphas : dict of {alphaName : alphaValue} for the alpha values that were used when fitting coefficient matrix B
+        covdf: Pandas DataFrame containing covariates that should be included with every block X above (can be empty).
+
+    Returns:
+        transformed Pandas DataFrame containing reduced matrix block produced by the multiplication X*B
+            schema (specified by reduced_matrix_struct):
+                 |-- header: string
+                 |-- size: integer
+                 |-- values: array
+                 |    |-- element: double
+                 |-- header_block: string
+                 |-- sample_block: string
+                 |-- sort_key: integer
+                 |-- mu: double
+                 |-- sig: double
+                 |-- alpha: string
+                 |-- label: string
+    """
+
+    header_block, sample_block, label = parse_header_block_sample_block_label(key, key_pattern)
+    sort_in_place(pdf, ['sort_key'])
+
+    # if key == ('chr_1_block_0', '2'):
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
+
+    # Kiavash
+    # if header_block == 'all' and sample_block == '1' and label == 'Y1':
+    #     from pdb_clone import pdb
+    #     pdb.set_trace_remote()
+
+    if covdf.empty:
+        n_rows = pdf['size'][0]
+        n_cols = len(pdf)
+        X = assemble_block_no_standardization(n_rows, n_cols, pdf, np.array([]), np.array([]))
+    else:
+        sample_list = sample_index[sample_block]
+        n_rows = int(pdf[~pdf['values'].isnull()]['size'].array[0])
+        n_cols = len(pdf[~pdf['values'].isnull()])
+        cov_matrix = slice_label_rows(covdf, 'all', sample_list, np.array([]))
+        X = assemble_block_no_standardization(n_rows, n_cols, pdf[~pdf['values'].isnull()], cov_matrix, np.array([]))
+
+    B = np.row_stack(pdf['coefficients'].array)
+    XB = X @ B
+    mu, sig = XB.mean(axis=0), XB.std(axis=0)
+    alpha_names = sorted(alphas.keys())
+    row_indexer = cross_alphas_and_labels(alpha_names, labeldf, label)
+    alpha_col, label_col = zip(*row_indexer)
+    new_header_block, sort_key_col, header_col = new_headers(header_block, alpha_names, row_indexer)
+
+    data = {
+        'header': header_col,
+        'size': X.shape[0],
+        'values': list(XB.T),
+        'header_block': new_header_block,
+        'sample_block': sample_block,
+        'sort_key': sort_key_col,
+        'mu': mu,
+        'sig': sig,
+        'alpha': alpha_col,
+        'label': label_col
+    }
+
+    return pd.DataFrame(data)
+
+# Kiavash: added this function to drop standardization for comparison with regenie. See the comments in Step1_Model.cpp  about l1->test_mat
+@typechecked
+def score_models_no_standardization(key: Tuple, key_pattern: List[str], pdf: pd.DataFrame, labeldf: pd.DataFrame,
+                 sample_index: Dict[str, List[str]], alphas: Dict[str, Float], covdf: pd.DataFrame,
+                 maskdf: pd.DataFrame, metric: str) -> pd.DataFrame:
+    """
+    Similar to apply_model, this function performs the multiplication X*B for a block X and corresponding coefficient
+    matrix B, however it also produces a score for the model, specified by the :metric: parameter.
+
+    Args:
+        key : unique key identifying the group of rows emitted by a groupBy statement
+        key_pattern : pattern of columns used in the groupBy statement that emitted this group of rows
+        pdf : starting Pandas DataFrame containing the lists of rows used to assemble block X and coefficients B
+            identified by :key:
+            schema:
+                 |-- header_block: string
+                 |-- sample_block: string
+                 |-- header: string
+                 |-- size: integer
+                 |-- indices: array
+                 |    |-- element: integer
+                 |-- values: array
+                 |    |-- element: double
+                 |-- sort_key: integer
+                 |-- mu: double
+                 |-- sig: double
+                 |-- alphas: array
+                 |    |-- element: string
+                 |-- labels: array
+                 |    |-- element: string
+                 |-- coefficients: array
+                 |    |-- element: double
+        labeldf : Pandas DataFrame containing label values that were used in fitting coefficient matrix B.
+        sample_index : sample_index: dict containing a mapping of sample_block ID to a list of corresponding sample IDs
+        alphas : dict of {alphaName : alphaValue} for the alpha values that were used when fitting coefficient matrix B
+        covdf: Pandas DataFrame containing covariates that should be included with every block X above (can be empty).
+        maskdf : Pandas DataFrame mirroring labeldf containing Boolean values flagging samples with missing labels as
+            True and others as False.
+        metric: String specifying what metric to apply, can be 'r2' or 'log_loss'
+
+    Returns:
+        Pandas DataFrame containing the r2 scores for each combination of alpha and label
+            schema:
+                 |-- sample_block: string
+                 |-- label: string
+                 |-- alpha: string
+                 |-- score: double
+    """
+    header_block, sample_block, label = parse_header_block_sample_block_label(key, key_pattern)
+    sort_in_place(pdf, ['sort_key'])
+    sample_list = sample_index[sample_block]
+
+    if maskdf.empty:
+        row_mask = np.array([])
+    else:
+        row_mask = slice_label_rows(maskdf, label, sample_list, np.array([])).ravel()
+
+    if covdf.empty:
+        n_rows = pdf['size'][0]
+        n_cols = len(pdf)
+        X = assemble_block_no_standardization(n_rows, n_cols, pdf, np.array([]), row_mask)
+    else:
+        # If there is a covdf, we will have null 'values' entries in pdf arising from the right join of blockdf
+        # to modeldf, so we will filter those rows out before assembling the block.
+        n_rows = int(pdf[~pdf['values'].isnull()]['size'].array[0])
+        n_cols = len(pdf[~pdf['values'].isnull()])
+        cov_matrix = slice_label_rows(covdf, 'all', sample_list, np.array([]))
+        X = assemble_block_no_standardization(n_rows, n_cols, pdf[~pdf['values'].isnull()], cov_matrix, row_mask)
 
     B = np.row_stack(pdf['coefficients'].array)
     XB = X @ B
